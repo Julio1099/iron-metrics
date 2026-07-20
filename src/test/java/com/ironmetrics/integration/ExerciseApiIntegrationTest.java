@@ -6,6 +6,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,16 +34,34 @@ class ExerciseApiIntegrationTest extends PostgresIntegrationTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
+    private String accessToken;
+
     @DynamicPropertySource
     static void registerProperties(DynamicPropertyRegistry registry) {
         registerPostgresProperties(registry);
     }
 
+    @BeforeEach
+    void authenticate() {
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                uri("/api/v1/auth/register"),
+                Map.of(
+                        "email", "exercise-" + UUID.randomUUID() + "@ironmetrics.test",
+                        "displayName", "Exercise Tester",
+                        "password", "Password123!"
+                ),
+                Map.class
+        );
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        accessToken = (String) response.getBody().get("accessToken");
+    }
+
     @Test
     void shouldCreateExerciseUnderVersionedRoute() {
-        ResponseEntity<Map> response = restTemplate.postForEntity(
+        ResponseEntity<Map> response = restTemplate.exchange(
                 uri("/api/v1/exercises"),
-                createExercise("Bench Press"),
+                HttpMethod.POST,
+                new HttpEntity<>(createExercise("Bench Press"), authorizationHeaders()),
                 Map.class
         );
 
@@ -62,7 +81,12 @@ class ExerciseApiIntegrationTest extends PostgresIntegrationTest {
         postExercise("Romanian Deadlift", "HAMSTRINGS", "HINGE", "COMPOUND");
         postExercise("Cable Fly", "CHEST", "PUSH", "ISOLATION");
 
-        ResponseEntity<List> response = restTemplate.getForEntity(uri("/api/v1/exercises"), List.class);
+        ResponseEntity<List> response = restTemplate.exchange(
+                uri("/api/v1/exercises"),
+                HttpMethod.GET,
+                new HttpEntity<>(authorizationHeaders()),
+                List.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         List<String> names = response.getBody().stream()
@@ -76,7 +100,12 @@ class ExerciseApiIntegrationTest extends PostgresIntegrationTest {
     void shouldGetExerciseById() {
         UUID id = postExercise("Lat Pulldown", "BACK", "PULL", "COMPOUND");
 
-        ResponseEntity<Map> response = restTemplate.getForEntity(uri("/api/v1/exercises/" + id), Map.class);
+        ResponseEntity<Map> response = restTemplate.exchange(
+                uri("/api/v1/exercises/" + id),
+                HttpMethod.GET,
+                new HttpEntity<>(authorizationHeaders()),
+                Map.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody())
@@ -96,7 +125,7 @@ class ExerciseApiIntegrationTest extends PostgresIntegrationTest {
                         "primaryMuscleGroup", "QUADRICEPS",
                         "movementPattern", "SQUAT",
                         "mechanicsType", "COMPOUND"
-                )),
+                ), authorizationHeaders()),
                 Map.class
         );
 
@@ -115,14 +144,16 @@ class ExerciseApiIntegrationTest extends PostgresIntegrationTest {
         ResponseEntity<Void> deleteResponse = restTemplate.exchange(
                 uri("/api/v1/exercises/" + id),
                 HttpMethod.DELETE,
-                HttpEntity.EMPTY,
+                new HttpEntity<>(authorizationHeaders()),
                 Void.class
         );
 
         assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        ResponseEntity<Map> getResponse = restTemplate.getForEntity(
+        ResponseEntity<Map> getResponse = restTemplate.exchange(
                 uri("/api/v1/exercises/" + id),
+                HttpMethod.GET,
+                new HttpEntity<>(authorizationHeaders()),
                 Map.class
         );
 
@@ -139,9 +170,10 @@ class ExerciseApiIntegrationTest extends PostgresIntegrationTest {
     void shouldRejectDuplicateExerciseNames() {
         postExercise("Incline Dumbbell Press", "CHEST", "PUSH", "COMPOUND");
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(
+        ResponseEntity<Map> response = restTemplate.exchange(
                 uri("/api/v1/exercises"),
-                createExercise("incline dumbbell press"),
+                HttpMethod.POST,
+                new HttpEntity<>(createExercise("incline dumbbell press"), authorizationHeaders()),
                 Map.class
         );
 
@@ -162,9 +194,10 @@ class ExerciseApiIntegrationTest extends PostgresIntegrationTest {
                 "mechanicsType", "COMPOUND"
         );
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(
+        ResponseEntity<Map> response = restTemplate.exchange(
                 uri("/api/v1/exercises"),
-                payload,
+                HttpMethod.POST,
+                new HttpEntity<>(payload, authorizationHeaders()),
                 Map.class
         );
 
@@ -191,7 +224,12 @@ class ExerciseApiIntegrationTest extends PostgresIntegrationTest {
                 "mechanicsType", mechanicsType
         );
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(uri("/api/v1/exercises"), payload, Map.class);
+        ResponseEntity<Map> response = restTemplate.exchange(
+                uri("/api/v1/exercises"),
+                HttpMethod.POST,
+                new HttpEntity<>(payload, authorizationHeaders()),
+                Map.class
+        );
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return UUID.fromString((String) response.getBody().get("id"));
@@ -208,5 +246,11 @@ class ExerciseApiIntegrationTest extends PostgresIntegrationTest {
 
     private URI uri(String path) {
         return URI.create("http://localhost:" + port + path);
+    }
+
+    private HttpHeaders authorizationHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        return headers;
     }
 }

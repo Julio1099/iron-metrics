@@ -85,7 +85,12 @@ Current test coverage:
 
 - RFC 7807 error contract through `@ControllerAdvice`.
 - Flyway schema and core table creation with PostgreSQL Testcontainers.
+- JWT registration/login and protected business routes.
+- CORS preflight behavior for allowed and rejected origins.
+- Bucket4j rate limiting for auth and authenticated routes.
 - `/api/v1/exercises` CRUD integration flow.
+- `/api/v1/workout-sessions` and workout set integration flow.
+- Estimated 1RM domain calculation and guard clauses.
 
 ## Running the API
 
@@ -107,9 +112,43 @@ Health endpoint:
 http://localhost:8080/api/v1/actuator/health
 ```
 
-## Sprint 1 API
+## Authentication
 
-The first CRUD surface is the exercise catalog:
+Sprint 2 protects business routes with JWT bearer tokens.
+
+```text
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+```
+
+Register payload:
+
+```json
+{
+  "email": "julio@example.com",
+  "displayName": "Julio",
+  "password": "Password123!"
+}
+```
+
+Login payload:
+
+```json
+{
+  "email": "julio@example.com",
+  "password": "Password123!"
+}
+```
+
+Use the returned token in protected requests:
+
+```http
+Authorization: Bearer <accessToken>
+```
+
+## Training API
+
+Exercise catalog:
 
 ```text
 POST   /api/v1/exercises
@@ -136,7 +175,72 @@ Valid enum values:
 - `movementPattern`: `SQUAT`, `HINGE`, `PUSH`, `PULL`, `LUNGE`, `CARRY`, `ROTATION`, `ISOLATION`, `OTHER`
 - `mechanicsType`: `COMPOUND`, `ISOLATION`
 
-Security is intentionally permissive in Sprint 1 so the base CRUD can be exercised end-to-end. Sprint 2 replaces this with JWT authentication and Bucket4j rate limiting.
+Workout sessions:
+
+```text
+POST /api/v1/workout-sessions
+GET  /api/v1/workout-sessions
+POST /api/v1/workout-sessions/{id}/sets
+```
+
+Create session payload:
+
+```json
+{
+  "title": "Upper A",
+  "sessionDate": "2026-07-20",
+  "bodyWeightKg": "82.40"
+}
+```
+
+Add set payload:
+
+```json
+{
+  "exerciseId": "00000000-0000-0000-0000-000000000000",
+  "setOrder": 1,
+  "loadKg": "100.00",
+  "repetitions": 5,
+  "rpe": "9.0"
+}
+```
+
+Estimated 1RM is calculated with the Epley formula using effective repetitions:
+
+- `RIR = 10 - RPE`
+- `effective reps = performed reps + RIR`
+- skip estimated 1RM when `RPE < 7`
+- skip estimated 1RM when effective reps are greater than `12`
+
+## Security Controls
+
+JWT settings:
+
+```yaml
+iron-metrics:
+  security:
+    jwt:
+      issuer: iron-metrics
+      secret: iron-metrics-local-development-secret-key-with-at-least-256-bits
+      access-token-ttl: PT1H
+```
+
+CORS is environment-driven. The default local origins are `http://localhost:3000` and `http://localhost:8080`; the `prod` profile requires `IRON_METRICS_CORS_ALLOWED_ORIGINS`.
+
+Bucket4j rate limits are configurable:
+
+```yaml
+iron-metrics:
+  rate-limit:
+    auth:
+      capacity: 20
+      refill-tokens: 20
+      refill-period: PT1M
+    authenticated:
+      capacity: 120
+      refill-tokens: 120
+      refill-period: PT1M
+```
 
 ## Flyway Layout
 
@@ -158,16 +262,15 @@ The `dev` profile loads both locations. The default and `prod` profiles load onl
 
 ```text
 com.ironmetrics
-├── auth
-├── users
-├── training
-├── nutrition
-├── analytics
-├── config
-└── shared
-    ├── error
-    ├── ratelimit
-    └── security
+|-- auth
+|-- users
+|-- training
+|-- nutrition
+|-- analytics
+|-- config
+`-- shared
+    |-- error
+    `-- security
 ```
 
 Each feature package follows this internal split:
@@ -177,12 +280,7 @@ Each feature package follows this internal split:
 - `domain`: domain models and business rules.
 - `infrastructure`: persistence and external adapters.
 
-## Sprint Guardrail
+## Sprint Status
 
-Sprint 1 is limited to foundation and CRUD plumbing. The next domain implementation will be the training 1RM calculation, written test-first:
-
-- `RIR = 10 - RPE`
-- `effective reps = performed reps + RIR`
-- Epley formula uses effective reps
-- ignore estimated 1RM when `RPE < 7`
-- ignore estimated 1RM when effective reps are greater than `12`
+- Sprint 1: foundation, Flyway/PostgreSQL schemas, RFC 7807 errors, exercise CRUD.
+- Sprint 2: JWT authentication, CORS, Bucket4j rate limiting, estimated 1RM, workout sessions and sets.
