@@ -1,0 +1,81 @@
+spring:
+  application:
+    name: iron-metrics
+  datasource:
+    url: ${IRON_METRICS_DB_URL:jdbc:postgresql://localhost:5432/iron_metrics}
+    username: ${IRON_METRICS_DB_USER:iron_metrics}
+    password: ${IRON_METRICS_DB_PASSWORD:iron_metrics_dev_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: public
+        jdbc:
+          time_zone: UTC
+  sql:
+    init:
+      mode: never
+  flyway:
+    enabled: true
+    default-schema: public
+    schemas:
+      - public
+      - analytics
+    create-schemas: true
+    locations:
+      - classpath:db/migration/core
+
+server:
+  servlet:
+    context-path: /api/v1
+  error:
+    whitelabel:
+      enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  flyway:
+    locations:
+      - classpath:db/migration/core
+      - classpath:db/migration/dev
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${IRON_METRICS_DB_URL}
+    username: ${IRON_METRICS_DB_USER}
+    password: ${IRON_METRICS_DB_PASSWORD}
+  flyway:
+    locations:
+      - classpath:db/migration/core
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    org.hibernate.SQL: off
