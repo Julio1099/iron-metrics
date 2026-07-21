@@ -94,6 +94,9 @@ Current test coverage:
 - Dockerfile and Docker build context contract.
 - Kubernetes manifests for API/PostgreSQL runtime, probes, ConfigMap, Secret, and Kustomize.
 - Versioned Kubernetes health probes.
+- Analytics schema read models, idempotent OLTP-to-OLAP refresh, and BI read-only role.
+- `/api/v1/analytics` read-only endpoints backed by the `analytics` schema.
+- Power BI contract documentation and BI user operational script.
 - `/api/v1/exercises` CRUD integration flow.
 - `/api/v1/workout-sessions` and workout set integration flow.
 - Estimated 1RM domain calculation and guard clauses.
@@ -290,6 +293,59 @@ Estimated 1RM is calculated with the Epley formula using effective repetitions:
 - skip estimated 1RM when `RPE < 7`
 - skip estimated 1RM when effective reps are greater than `12`
 
+## Analytics API
+
+Sprint 5 exposes read-only analytics under:
+
+```text
+GET /api/v1/analytics/training-volume/daily
+GET /api/v1/analytics/exercise-progressions/daily
+GET /api/v1/analytics/body-weight/daily
+```
+
+All analytics endpoints require JWT authentication and filter by the authenticated user.
+
+Optional query parameters:
+
+```text
+from=2026-07-01
+to=2026-07-31
+```
+
+The endpoints read from the `analytics` schema only. Transactional writes continue to happen in `public`.
+
+## Analytics ETL
+
+The read models are refreshed idempotently by:
+
+```sql
+SELECT * FROM analytics.refresh_body_recomposition_read_models();
+```
+
+Operational Python runner:
+
+```bash
+pip install "psycopg[binary]"
+
+IRON_METRICS_DB_USER=iron_metrics \
+IRON_METRICS_DB_PASSWORD=iron_metrics_dev_password \
+python scripts/analytics/refresh_analytics.py
+```
+
+Power BI should use the read-only `iron_metrics_bi` user, granted through the `iron_metrics_analytics_reader` role:
+
+```bash
+psql "$IRON_METRICS_ADMIN_DSN" \
+  -v bi_password="$IRON_METRICS_BI_PASSWORD" \
+  -f ops/postgres/create-bi-readonly-user.sql
+```
+
+The Power BI data contract lives in:
+
+```text
+docs/power-bi.md
+```
+
 ## Security Controls
 
 JWT settings:
@@ -384,3 +440,4 @@ Each feature package follows this internal split:
 - Sprint 2: JWT authentication, CORS, Bucket4j rate limiting, estimated 1RM, workout sessions and sets.
 - Sprint 3: dev showroom seed, OpenAPI/Swagger contract, GitHub Actions CI, initial ADRs.
 - Sprint 4: Docker image, Kubernetes/Minikube manifests, liveness/readiness probes, runtime guide.
+- Sprint 5: analytics read models, idempotent ETL refresh, BI read-only role, analytics endpoints, Power BI contract.

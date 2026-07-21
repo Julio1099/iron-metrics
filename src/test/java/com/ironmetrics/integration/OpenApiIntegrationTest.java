@@ -56,7 +56,10 @@ class OpenApiIntegrationTest extends PostgresIntegrationTest {
                 "/auth/login",
                 "/exercises",
                 "/workout-sessions",
-                "/workout-sessions/{id}/sets"
+                "/workout-sessions/{id}/sets",
+                "/analytics/training-volume/daily",
+                "/analytics/exercise-progressions/daily",
+                "/analytics/body-weight/daily"
         );
 
         Map<?, ?> securitySchemes = (Map<?, ?>) ((Map<?, ?>) body.get("components")).get("securitySchemes");

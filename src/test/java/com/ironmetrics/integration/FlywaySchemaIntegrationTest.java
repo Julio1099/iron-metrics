@@ -37,7 +37,7 @@ class FlywaySchemaIntegrationTest extends PostgresIntegrationTest {
                 Integer.class
         );
 
-        assertThat(appliedMigrations).isEqualTo(2);
+        assertThat(appliedMigrations).isEqualTo(3);
     }
 
     @Test
@@ -48,6 +48,13 @@ class FlywaySchemaIntegrationTest extends PostgresIntegrationTest {
         assertThat(tableExists("public", "workout_sets")).isTrue();
         assertThat(tableExists("public", "food_items")).isTrue();
         assertThat(tableExists("public", "nutrition_logs")).isTrue();
+    }
+
+    @Test
+    void shouldCreateAnalyticsReadModelTablesInAnalyticsSchema() {
+        assertThat(tableExists("analytics", "training_volume_daily")).isTrue();
+        assertThat(tableExists("analytics", "exercise_progression_daily")).isTrue();
+        assertThat(tableExists("analytics", "body_weight_daily")).isTrue();
     }
 
     private Boolean schemaExists(String schemaName) {

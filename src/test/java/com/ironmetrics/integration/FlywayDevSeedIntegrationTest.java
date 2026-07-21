@@ -67,11 +67,22 @@ class FlywayDevSeedIntegrationTest {
                 String.class
         );
 
-        assertThat(appliedMigrations).isEqualTo(3);
+        Integer demoAnalyticsTrainingRows = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM analytics.training_volume_daily
+                WHERE user_id = '00000000-0000-0000-0000-000000000101'
+                AND training_date = '2026-07-20'
+                """,
+                Integer.class
+        );
+
+        assertThat(appliedMigrations).isEqualTo(4);
         assertThat(demoUsers).isEqualTo(1);
         assertThat(demoExercises).isEqualTo(4);
         assertThat(demoWorkoutSets).isEqualTo(4);
         assertThat(benchEstimatedOneRepMax).isEqualByComparingTo("120.00");
+        assertThat(demoAnalyticsTrainingRows).isEqualTo(1);
         assertThat(passwordEncoder.matches("Password123!", demoPasswordHash)).isTrue();
     }
 

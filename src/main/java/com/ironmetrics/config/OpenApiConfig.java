@@ -45,7 +45,8 @@ public class OpenApiConfig {
                 .tags(List.of(
                         new Tag().name("Authentication").description("Registration and JWT login operations."),
                         new Tag().name("Exercises").description("Strength exercise catalog operations."),
-                        new Tag().name("Workout Sessions").description("Workout session and set tracking operations.")
+                        new Tag().name("Workout Sessions").description("Workout session and set tracking operations."),
+                        new Tag().name("Analytics").description("Read-only analytical views backed by the analytics schema.")
                 ));
     }
 

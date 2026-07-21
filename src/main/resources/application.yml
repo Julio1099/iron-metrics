@@ -88,6 +88,22 @@ iron-metrics:
 spring:
   config:
     activate:
+      on-profile: test
+  datasource:
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 0
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    org.hibernate.SQL: off
+
+---
+spring:
+  config:
+    activate:
       on-profile: dev
   flyway:
     locations:
