@@ -1,6 +1,8 @@
 spring:
   application:
     name: iron-metrics
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
   datasource:
     url: ${IRON_METRICS_DB_URL:jdbc:postgresql://localhost:5432/iron_metrics}
     username: ${IRON_METRICS_DB_USER:iron_metrics}
@@ -29,6 +31,7 @@ spring:
       - classpath:db/migration/core
 
 server:
+  shutdown: graceful
   servlet:
     context-path: /api/v1
   error:
@@ -44,6 +47,11 @@ management:
     health:
       probes:
         enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db
 
 springdoc:
   api-docs:

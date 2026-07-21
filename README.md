@@ -23,7 +23,8 @@ Iron Metrics is a RESTful API for tracking and analyzing body recomposition data
 - Bucket4j
 - JUnit 5, Mockito, and Testcontainers
 - Docker Compose for local infrastructure
-- Kubernetes/Minikube planned for later sprints
+- Docker image build with a multi-stage Dockerfile
+- Kubernetes manifests for Minikube
 
 ## Local Requirements
 
@@ -90,6 +91,9 @@ Current test coverage:
 - Bucket4j rate limiting for auth and authenticated routes.
 - Dev-only Flyway seed data for showroom usage.
 - OpenAPI contract metadata, paths, and JWT security scheme.
+- Dockerfile and Docker build context contract.
+- Kubernetes manifests for API/PostgreSQL runtime, probes, ConfigMap, Secret, and Kustomize.
+- Versioned Kubernetes health probes.
 - `/api/v1/exercises` CRUD integration flow.
 - `/api/v1/workout-sessions` and workout set integration flow.
 - Estimated 1RM domain calculation and guard clauses.
@@ -124,6 +128,48 @@ OpenAPI JSON:
 
 ```text
 http://localhost:8080/api/v1/v3/api-docs
+```
+
+## Building the API Image
+
+Build the production-like application image:
+
+```bash
+docker build -t iron-metrics:local .
+```
+
+The image is produced with a multi-stage build:
+
+- Maven + Eclipse Temurin 21 for compilation.
+- Eclipse Temurin 21 JRE Alpine for runtime.
+- Non-root `ironmetrics` user.
+- Port `8080` exposed.
+
+## Running on Minikube
+
+Sprint 4 adds Kubernetes manifests under:
+
+```text
+k8s
+```
+
+Apply them with Kustomize:
+
+```bash
+kubectl apply -k k8s
+```
+
+The API deployment uses:
+
+```text
+/api/v1/actuator/health/liveness
+/api/v1/actuator/health/readiness
+```
+
+The full local Minikube workflow is documented in:
+
+```text
+docs/minikube.md
 ```
 
 ## Dev Showroom Seed
@@ -337,3 +383,4 @@ Each feature package follows this internal split:
 - Sprint 1: foundation, Flyway/PostgreSQL schemas, RFC 7807 errors, exercise CRUD.
 - Sprint 2: JWT authentication, CORS, Bucket4j rate limiting, estimated 1RM, workout sessions and sets.
 - Sprint 3: dev showroom seed, OpenAPI/Swagger contract, GitHub Actions CI, initial ADRs.
+- Sprint 4: Docker image, Kubernetes/Minikube manifests, liveness/readiness probes, runtime guide.

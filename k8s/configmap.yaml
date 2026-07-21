@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iron-metrics-api-config
+  labels:
+    app.kubernetes.io/name: iron-metrics-api
+    app.kubernetes.io/part-of: iron-metrics
+data:
+  SPRING_PROFILES_ACTIVE: "prod"
+  IRON_METRICS_DB_URL: "jdbc:postgresql://iron-metrics-postgres:5432/iron_metrics"
+  IRON_METRICS_DB_USER: "iron_metrics"
+  IRON_METRICS_JWT_ISSUER: "iron-metrics"
+  IRON_METRICS_JWT_ACCESS_TOKEN_TTL: "PT1H"
+  IRON_METRICS_CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:8080"
+  IRON_METRICS_RATE_LIMIT_AUTH_CAPACITY: "20"
+  IRON_METRICS_RATE_LIMIT_AUTH_REFILL_TOKENS: "20"
+  IRON_METRICS_RATE_LIMIT_AUTH_REFILL_PERIOD: "PT1M"
+  IRON_METRICS_RATE_LIMIT_AUTHENTICATED_CAPACITY: "120"
+  IRON_METRICS_RATE_LIMIT_AUTHENTICATED_REFILL_TOKENS: "120"
+  IRON_METRICS_RATE_LIMIT_AUTHENTICATED_REFILL_PERIOD: "PT1M"

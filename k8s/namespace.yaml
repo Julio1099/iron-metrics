@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: iron-metrics
+  labels:
+    app.kubernetes.io/name: iron-metrics
+    app.kubernetes.io/part-of: iron-metrics
