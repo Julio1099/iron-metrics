@@ -88,6 +88,8 @@ Current test coverage:
 - JWT registration/login and protected business routes.
 - CORS preflight behavior for allowed and rejected origins.
 - Bucket4j rate limiting for auth and authenticated routes.
+- Dev-only Flyway seed data for showroom usage.
+- OpenAPI contract metadata, paths, and JWT security scheme.
 - `/api/v1/exercises` CRUD integration flow.
 - `/api/v1/workout-sessions` and workout set integration flow.
 - Estimated 1RM domain calculation and guard clauses.
@@ -111,6 +113,36 @@ Health endpoint:
 ```text
 http://localhost:8080/api/v1/actuator/health
 ```
+
+Swagger UI:
+
+```text
+http://localhost:8080/api/v1/swagger-ui.html
+```
+
+OpenAPI JSON:
+
+```text
+http://localhost:8080/api/v1/v3/api-docs
+```
+
+## Dev Showroom Seed
+
+The `dev` profile loads realistic demo data from `src/main/resources/db/migration/dev`.
+
+Demo login:
+
+```text
+email: demo@ironmetrics.dev
+password: Password123!
+```
+
+The seed includes:
+
+- A demo user with a BCrypt password hash.
+- Four strength exercises.
+- One workout session with four sets, including a guarded set where estimated 1RM is intentionally `null`.
+- Four food items and nutrition log entries for later nutrition/API sprints.
 
 ## Authentication
 
@@ -242,6 +274,26 @@ iron-metrics:
       refill-period: PT1M
 ```
 
+## CI
+
+GitHub Actions runs the Maven test suite on every push and pull request to `main`.
+
+```text
+.github/workflows/ci.yml
+```
+
+The pipeline uses Java 21 and lets Testcontainers start PostgreSQL during `mvn -B test`.
+
+## Architecture Decisions
+
+Initial ADRs live in:
+
+```text
+docs/adr
+```
+
+They document the versioned modular API, Flyway-managed PostgreSQL schemas, JWT/RFC 7807 security, and the Testcontainers quality gate.
+
 ## Flyway Layout
 
 Production-safe migrations:
@@ -284,3 +336,4 @@ Each feature package follows this internal split:
 
 - Sprint 1: foundation, Flyway/PostgreSQL schemas, RFC 7807 errors, exercise CRUD.
 - Sprint 2: JWT authentication, CORS, Bucket4j rate limiting, estimated 1RM, workout sessions and sets.
+- Sprint 3: dev showroom seed, OpenAPI/Swagger contract, GitHub Actions CI, initial ADRs.

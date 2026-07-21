@@ -1,6 +1,8 @@
 package com.ironmetrics.training.api;
 
 import com.ironmetrics.training.application.ExerciseService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -18,6 +20,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/exercises")
+@Tag(name = "Exercises")
 public class ExerciseController {
 
     private final ExerciseService exerciseService;
@@ -27,6 +30,7 @@ public class ExerciseController {
     }
 
     @PostMapping
+    @Operation(summary = "Create an exercise")
     public ResponseEntity<ExerciseResponse> create(@Valid @RequestBody CreateExerciseRequest request) {
         ExerciseResponse response = ExerciseResponse.from(exerciseService.create(request));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -38,6 +42,7 @@ public class ExerciseController {
     }
 
     @GetMapping
+    @Operation(summary = "List exercises")
     public List<ExerciseResponse> findAll() {
         return exerciseService.findAll().stream()
                 .map(ExerciseResponse::from)
@@ -45,11 +50,13 @@ public class ExerciseController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get an exercise by id")
     public ExerciseResponse findById(@PathVariable UUID id) {
         return ExerciseResponse.from(exerciseService.findById(id));
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update an exercise")
     public ExerciseResponse update(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateExerciseRequest request
@@ -58,6 +65,7 @@ public class ExerciseController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete an exercise")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         exerciseService.delete(id);
         return ResponseEntity.noContent().build();

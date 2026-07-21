@@ -1,6 +1,8 @@
 package com.ironmetrics.training.api;
 
 import com.ironmetrics.training.application.WorkoutSessionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -18,6 +20,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/workout-sessions")
+@Tag(name = "Workout Sessions")
 public class WorkoutSessionController {
 
     private final WorkoutSessionService workoutSessionService;
@@ -27,6 +30,7 @@ public class WorkoutSessionController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a workout session")
     public ResponseEntity<WorkoutSessionResponse> create(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody CreateWorkoutSessionRequest request
@@ -41,11 +45,13 @@ public class WorkoutSessionController {
     }
 
     @GetMapping
+    @Operation(summary = "List workout sessions owned by the authenticated user")
     public List<WorkoutSessionResponse> findAll(@AuthenticationPrincipal Jwt jwt) {
         return workoutSessionService.findAll(currentUserId(jwt));
     }
 
     @PostMapping("/{id}/sets")
+    @Operation(summary = "Add a workout set and calculate estimated 1RM when eligible")
     public ResponseEntity<WorkoutSetResponse> addSet(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID id,
